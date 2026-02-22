@@ -7,12 +7,25 @@ description: >-
   "馬賽克", "模糊處理", "圖片標註", "裁切圖片", "圖片編輯",
   "遮蔽敏感資訊", mentions image editing or manipulation,
   or discusses applying visual effects to specific regions of an image.
-version: 0.1.0
+version: 0.2.0
+tools: Bash, Read, Write, sandbox_execute
 ---
 
 # Image Edit — Programmatic Image Manipulation
 
 Edit images with Python Pillow: mosaic/blur regions, draw annotations, crop, resize, and generate before/after comparison strips for verification.
+
+## Agent Delegation
+
+All image editing processing delegates to the `media` agent (Haiku, maxTurns=10).
+Main context handles user interaction and parameter clarification only.
+
+```
+Main context (parse request, clarify params)
+  └─ Task(subagent_type: media, prompt: "[specific operation]...")
+```
+
+For batch operations, spawn parallel media agents (one per file).
 
 ## Prerequisites
 
@@ -22,6 +35,8 @@ python3 -c "from PIL import Image" 2>/dev/null || \
 ```
 
 ## Core Operations
+
+> **Sandbox acceleration**: When processing 3+ images in batch, use `sandbox_execute` to run all Pillow operations in a single call and return structured summaries — avoids loading raw image data into main context.
 
 ### Mosaic (Pixelation)
 
@@ -152,6 +167,15 @@ Mode: DAG
 - Agent per image: detect + mosaic + verify independently
 - Final agent: merge all outputs
 ```
+
+## Sandbox Optimization
+
+Batch operations benefit from `sandbox_execute`:
+
+- **Batch image processing**: Process multiple images (mosaic, blur, annotate, resize) in one sandbox call, returning structured summaries instead of raw image data
+- Saves context tokens when handling 3+ images simultaneously
+
+Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
 ## Continuous Improvement
 
