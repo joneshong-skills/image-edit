@@ -8,7 +8,7 @@
 
 ```bash
 # 檢查依賴
-python3 -c "from PIL import Image" 2>/dev/null ||   pip3 install Pillow --break-system-packages
+~/.local/bin/python3 -c "from PIL import Image" 2>/dev/null ||   pip3 install Pillow --break-system-packages
 ```
 
 ## 核心操作

@@ -1,12 +1,6 @@
 ---
 name: image-edit
-description: >-
-  This skill should be used when the user asks to "mosaic part of an image",
-  "blur sensitive info", "pixelate a region", "annotate screenshot",
-  "add red boxes to image", "crop and resize image", "combine images",
-  "馬賽克", "模糊處理", "圖片標註", "裁切圖片", "圖片編輯",
-  "遮蔽敏感資訊", mentions image editing or manipulation,
-  or discusses applying visual effects to specific regions of an image.
+description: "image, edit, mosaic, part, blur, sensitive, info"
 version: 0.2.0
 tools: Bash, Read, Write, sandbox_execute
 ---
@@ -30,7 +24,7 @@ For batch operations, spawn parallel media agents (one per file).
 ## Prerequisites
 
 ```bash
-python3 -c "from PIL import Image" 2>/dev/null || \
+~/.local/bin/python3 -c "from PIL import Image" 2>/dev/null || \
   pip3 install Pillow --break-system-packages
 ```
 
@@ -72,6 +66,53 @@ region = img.crop(box)
 blurred = region.filter(ImageFilter.GaussianBlur(radius=15))
 img.paste(blurred, (box[0], box[1]))
 ```
+
+### Background-sample Redaction (Natural De-identification)
+
+When you want the result to look like a *genuine screenshot of a fake account*
+rather than an obviously censored one: sample the local background colour, fill
+over the original text, and write a fake replacement in its place. Avatars
+become flat monogram circles (default-avatar style). Choose this over mosaic
+when the screenshot will be shared publicly (blog, social, docs) and a censored
+look is undesirable.
+
+Implemented in **`scripts/redact.py`** (reusable module + CLI). It owns the
+fiddly mechanics; *which* regions and *what* replacements remain caller
+decisions (OCR auto-locates ASCII emails; name/avatar regions are a judgement
+call).
+
+```bash
+# CLI — auto path: OCR every email and replace with fake ones
+~/.local/bin/python3 scripts/redact.py shot.png --out shot_deid.png
+```
+
+```python
+# Module — full control (emails auto + manual name/avatar regions)
+from redact import RedactCanvas, fake_identities
+c = RedactCanvas("shot.png")
+ids = fake_identities(6)                       # 小明 小華 小美 ... + matching emails
+c.auto_redact_emails()                         # OCR + regex, auto-measured bounds
+c.redact_text((222, 1142, 645, 1192), "小華")   # rough box → auto-expands to real glyph span
+c.monogram_avatar(148, 1193, 54, "華")          # colour disc + letter
+c.save("shot_deid.png")
+```
+
+**Why a module, not inline (and not an `image-ops` op):** the value is 80%
+orchestration (OCR location, fake-name mapping, font, coordinate decisions),
+which doesn't belong in the pure-pixel `image-ops` layer. Keep it here.
+
+**Robustness notes (learned the hard way):**
+- `redact_text` **auto-measures the real text extent** (`measure_bounds`) and
+  expands the fill box — hand-estimated boxes clip glyph tails (e.g. a trailing
+  `！`). Never trust an eyeballed width.
+- `sample_bg` takes the median of a box's top/bottom edge strips, so it adapts
+  per-container (header sheet vs card vs body) automatically.
+- Fonts resolve through a **fallback chain** (STHeiti → Hiragino → PingFang →
+  Noto); `PingFang.ttc` is absent on some macOS installs — don't hard-code it.
+- Palette matches dark-mode UIs: primary text `(232,234,237)`, secondary/email
+  `(154,160,166)`. Adjust for light themes.
+- Verify like any redaction: re-run OCR on the output, assert no original PII
+  string survives.
 
 ### Annotation (Red Boxes, Labels)
 

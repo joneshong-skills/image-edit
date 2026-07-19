@@ -6,7 +6,7 @@ Programmatic image manipulation using Python Pillow: mosaic/blur regions, draw a
 
 ```bash
 # Check dependencies
-python3 -c "from PIL import Image" 2>/dev/null || \
+~/.local/bin/python3 -c "from PIL import Image" 2>/dev/null || \
   pip3 install Pillow --break-system-packages
 ```
 
