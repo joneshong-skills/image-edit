@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: image-edit
 description: "image, edit, mosaic, part, blur, sensitive, info"
 version: 0.2.0
