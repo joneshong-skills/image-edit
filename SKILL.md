@@ -157,7 +157,7 @@ The full workflow combining OCR + Image Edit for privacy protection:
 
 ### Sub-Region Calculation
 
-When OCR returns a long string containing the target (e.g., `/Users/joneshong/.claude/...`), calculate the sub-region for just the target word:
+When OCR returns a long string containing the target (e.g. a long file path), calculate the sub-region for just the target word:
 
 ```python
 def sub_region(full_text, keyword, x, y, w, h, pad=6):
